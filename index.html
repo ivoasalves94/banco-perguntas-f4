@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Banco de Perguntas F4</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6fb;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      margin-bottom: 18px;
+    }
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    textarea { min-height: 90px; resize: vertical; }
+    button {
+      cursor: pointer;
+      background: #111827;
+      color: white;
+      border: none;
+    }
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .tab {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      cursor: pointer;
+      border: none;
+      color: #111827;
+      width: auto;
+      margin: 0;
+    }
+    .tab.active {
+      background: #111827;
+      color: white;
+    }
+    .question {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      background: #fff;
+    }
+    .option {
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 10px;
+      margin: 8px 0;
+      cursor: pointer;
+      background: #fafafa;
+    }
+    .option.correct {
+      background: #dcfce7;
+      border-color: #22c55e;
+    }
+    .option.wrong {
+      background: #fee2e2;
+      border-color: #ef4444;
+    }
+    .meta {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .hidden { display: none; }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loginCard" class="card">
+      <h1>Banco de Perguntas F4</h1>
+      <p>Login partilhado para Endocrino, Gastro, Imunologia e Microbiologia.</p>
+      <label>Login</label>
+      <input id="loginUser" placeholder="Ex.: F4M" />
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="Password" />
+      <button onclick="login()">Entrar</button>
+      <div id="loginError" style="color:#dc2626;"></div>
+    </div>
+
+    <div id="app" class="hidden">
+      <div class="topbar">
+        <h1>Banco de Perguntas F4</h1>
+        <div>
+          <span id="who"></span>
+          <button class="secondary" style="width:auto; margin-left:10px;" onclick="logout()">Sair</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2 id="formTitle">Nova pergunta</h2>
+
+          <label>Disciplina</label>
+          <select id="discipline">
+            <option>Endocrino</option>
+            <option>Gastro</option>
+            <option>Imunologia</option>
+            <option>Microbiologia</option>
+          </select>
+
+          <label>Enunciado</label>
+          <textarea id="statement" placeholder="Escreve a pergunta clínica"></textarea>
+
+          <label>Opção A</label>
+          <input id="optionA" />
+
+          <label>Opção B</label>
+          <input id="optionB" />
+
+          <label>Opção C</label>
+          <input id="optionC" />
+
+          <label>Opção D</label>
+          <input id="optionD" />
+
+          <label>Resposta correta</label>
+          <select id="correct">
+            <option>A</option>
+            <option>B</option>
+            <option>C</option>
+            <option>D</option>
+          </select>
+
+          <label>Justificação breve</label>
+          <textarea id="explanation" placeholder="Opcional"></textarea>
+
+          <div class="row">
+            <button onclick="saveQuestion()">Guardar</button>
+            <button class="secondary" onclick="resetForm()">Limpar</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="topbar">
+            <h2>Perguntas</h2>
+            <div>
+              <button id="listBtn" class="tab active" onclick="setMode('list')">Lista</button>
+              <button id="quizBtn" class="tab" onclick="setMode('quiz')">Quiz</button>
+            </div>
+          </div>
+
+          <div class="tabs">
+            <button class="tab active" onclick="setDiscipline('Endocrino', this)">Endocrino</button>
+            <button class="tab" onclick="setDiscipline('Gastro', this)">Gastro</button>
+            <button class="tab" onclick="setDiscipline('Imunologia', this)">Imunologia</button>
+            <button class="tab" onclick="setDiscipline('Microbiologia', this)">Microbiologia</button>
+          </div>
+
+          <div id="questionsList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://nsvxaaebxikqoodpkvzs.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_R8zfRoIHCJxlsh4aQgxkbw_qOhg7JX7';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const allowedUsers = {
+      F4M: 'fquatrom',
+      F4J: 'fquatroj',
+      F4I: 'fquatroi',
+      F4B: 'fquatrob'
+    };
+
+    let currentUser = localStorage.getItem('f4_user') || '';
+    let currentDiscipline = 'Endocrino';
+    let mode = 'list';
+    let editingId = null;
+
+    function login() {
+      const user = document.getElementById('loginUser').value.trim();
+      const pass = document.getElementById('loginPass').value;
+      if (allowedUsers[user] && allowedUsers[user] === pass) {
+        currentUser = user;
+        localStorage.setItem('f4_user', user);
+        startApp();
+      } else {
+        document.getElementById('loginError').innerText = 'Login inválido.';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('f4_user');
+      location.reload();
+    }
+
+    function startApp() {
+      document.getElementById('loginCard').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      document.getElementById('who').innerText = 'Utilizador: ' + currentUser;
+      loadQuestions();
+    }
+
+    function setMode(newMode) {
+      mode = newMode;
+      document.getElementById('listBtn').classList.toggle('active', mode === 'list');
+      document.getElementById('quizBtn').classList.toggle('active', mode === 'quiz');
+      loadQuestions();
+    }
+
+    function setDiscipline(discipline, btn) {
+      currentDiscipline = discipline;
+      document.querySelectorAll('.tabs .tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadQuestions();
+    }
+
+    function resetForm() {
+      editingId = null;
+      document.getElementById('formTitle').innerText = 'Nova pergunta';
+      document.getElementById('discipline').value = 'Endocrino';
+      document.getElementById('statement').value = '';
+      document.getElementById('optionA').value = '';
+      document.getElementById('optionB').value = '';
+      document.getElementById('optionC').value = '';
+      document.getElementById('optionD').value = '';
+      document.getElementById('correct').value = 'A';
+      document.getElementById('explanation').value = '';
+    }
+
+    async function saveQuestion() {
+      const payload = {
+        discipline: document.getElementById('discipline').value,
+        statement: document.getElementById('statement').value.trim(),
+        option_a: document.getElementById('optionA').value.trim(),
+        option_b: document.getElementById('optionB').value.trim(),
+        option_c: document.getElementById('optionC').value.trim(),
+        option_d: document.getElementById('optionD').value.trim(),
+        correct: document.getElementById('correct').value,
+        explanation: document.getElementById('explanation').value.trim(),
+        author: currentUser
+      };
+
+      if (!payload.statement || !payload.option_a || !payload.option_b || !payload.option_c || !payload.option_d) {
+        alert('Preenche o enunciado e as 4 opções.');
+        return;
+      }
+
+      let result;
+      if (editingId) {
+        result = await supabaseClient.from('questions').update(payload).eq('id', editingId);
+      } else {
+        result = await supabaseClient.from('questions').insert(payload);
+      }
+
+      if (result.error) {
+        alert('Erro ao guardar.');
+        return;
+      }
+
+      resetForm();
+      currentDiscipline = payload.discipline;
+      loadQuestions();
+    }
+
+    async function deleteQuestion(id) {
+      if (!confirm('Queres apagar esta pergunta?')) return;
+      const { error } = await supabaseClient.from('questions').delete().eq('id', id);
+      if (error) {
+        alert('Erro ao apagar.');
+        return;
+      }
+      loadQuestions();
+    }
+
+    function editQuestion(q) {
+      editingId = q.id;
+      document.getElementById('formTitle').innerText = 'Editar pergunta';
+      document.getElementById('discipline').value = q.discipline;
+      document.getElementById('statement').value = q.statement;
+      document.getElementById('optionA').value = q.option_a;
+      document.getElementById('optionB').value = q.option_b;
+      document.getElementById('optionC').value = q.option_c;
+      document.getElementById('optionD').value = q.option_d;
+      document.getElementById('correct').value = q.correct;
+      document.getElementById('explanation').value = q.explanation || '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function loadQuestions() {
+      const { data, error } = await supabaseClient
+        .from('questions')
+        .select('*')
+        .eq('discipline', currentDiscipline)
+        .order('created_at', { ascending: true });
+
+      const box = document.getElementById('questionsList');
+      box.innerHTML = '';
+
+      if (error) {
+        box.innerHTML = '<p>Erro ao carregar perguntas.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        box.innerHTML = '<p>Ainda não há perguntas neste módulo.</p>';
+        return;
+      }
+
+      data.forEach((q, index) => {
+        const div = document.createElement('div');
+        div.className = 'question';
+
+        let optionsHtml = '';
+        ['A','B','C','D'].forEach(letter => {
+          const value = q['option_' + letter.toLowerCase()];
+          optionsHtml += `<div class="option" onclick="answer(this, '${letter}', '${q.correct}', ${JSON.stringify(q.explanation || '').replace(/"/g, '&quot;')})"><strong>${letter})</strong> ${value}</div>`;
+        });
+
+        div.innerHTML = `
+          <div class="meta">Pergunta ${index + 1} · Autor: ${q.author}</div>
+          <h3>${q.statement}</h3>
+          ${optionsHtml}
+          <div style="margin-top:10px;">
+            <button class="secondary" style="width:auto;" onclick='editQuestion(${JSON.stringify(q).replace(/'/g, "&apos;")})'>Editar</button>
+            <button class="secondary" style="width:auto;" onclick="deleteQuestion('${q.id}')">Apagar</button>
+          </div>
+        `;
+        box.appendChild(div);
+      });
+    }
+
+    function answer(el, selected, correct, explanation) {
+      const parent = el.parentElement;
+      const options = parent.querySelectorAll('.option');
+      options.forEach(opt => opt.onclick = null);
+
+      options.forEach(opt => {
+        const text = opt.innerText.trim();
+        const letter = text.charAt(0);
+        if (letter === correct) opt.classList.add('correct');
+        else if (letter === selected && selected !== correct) opt.classList.add('wrong');
+      });
+
+      const result = document.createElement('div');
+      result.style.marginTop = '12px';
+      result.innerHTML = selected === correct
+        ? '<strong>Certo.</strong>'
+        : '<strong>Errado.</strong> Resposta correta: ' + correct;
+
+      if (explanation) {
+        result.innerHTML += '<br><br><strong>Justificação:</strong> ' + explanation;
+      }
+
+      parent.appendChild(result);
+    }
+
+    if (currentUser) startApp();
+  </script>
+</body>
+</html>
