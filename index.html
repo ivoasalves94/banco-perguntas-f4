@@ -314,6 +314,21 @@
       color: var(--muted);
     }
 
+    .action-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .action-btn {
+      width: auto;
+      margin: 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+    }
+
     @media (max-width: 1000px) {
       .grid {
         grid-template-columns: 1fr;
@@ -352,9 +367,6 @@
       </div>
 
       <h1 style="text-align:center;">Banco de Perguntas F4</h1>
-      <div class="subtitle" style="text-align:center; margin-bottom:18px;">
-        Plataforma simples e moderna para Endocrino, Gastro, Imunologia e Microbiologia.
-      </div>
 
       <label>Login</label>
       <input id="loginUser" placeholder="Ex.: F4M" />
@@ -409,7 +421,7 @@
       <div class="grid">
 
         <div class="card">
-          <h2>Nova pergunta</h2>
+          <h2 id="formTitle">Nova pergunta</h2>
           <div class="small-note">As perguntas são guardadas online e ficam visíveis para todo o grupo.</div>
 
           <label>Disciplina</label>
@@ -446,7 +458,8 @@
           <label>Justificação breve</label>
           <textarea id="explanation" placeholder="Opcional. Aparece depois de responder."></textarea>
 
-          <button onclick="saveQuestion()">Guardar</button>
+          <button id="saveBtn" onclick="saveQuestion()">Guardar</button>
+          <button id="cancelBtn" class="secondary hidden" onclick="cancelEdit()">Cancelar edição</button>
         </div>
 
         <div class="card">
@@ -492,6 +505,7 @@
     let currentUser = localStorage.getItem('f4_user') || '';
     let currentDiscipline = 'Endocrino';
     let allQuestions = [];
+    let editingId = null;
 
     function login() {
       const u = document.getElementById('loginUser').value.trim();
@@ -525,6 +539,49 @@
       renderQuestions();
     }
 
+    function updateActiveTab() {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.innerText.trim() === currentDiscipline) {
+          tab.classList.add('active');
+        }
+      });
+    }
+
+    function fillFormForEdit(q) {
+      editingId = q.id;
+      document.getElementById('formTitle').innerText = 'Editar pergunta';
+      document.getElementById('saveBtn').innerText = 'Atualizar';
+      document.getElementById('cancelBtn').classList.remove('hidden');
+
+      document.getElementById('discipline').value = q.discipline;
+      document.getElementById('statement').value = q.statement;
+      document.getElementById('optionA').value = q.option_a;
+      document.getElementById('optionB').value = q.option_b;
+      document.getElementById('optionC').value = q.option_c;
+      document.getElementById('optionD').value = q.option_d;
+      document.getElementById('correct').value = q.correct;
+      document.getElementById('explanation').value = q.explanation || '';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+      editingId = null;
+      document.getElementById('formTitle').innerText = 'Nova pergunta';
+      document.getElementById('saveBtn').innerText = 'Guardar';
+      document.getElementById('cancelBtn').classList.add('hidden');
+
+      document.getElementById('discipline').value = currentDiscipline;
+      document.getElementById('statement').value = '';
+      document.getElementById('optionA').value = '';
+      document.getElementById('optionB').value = '';
+      document.getElementById('optionC').value = '';
+      document.getElementById('optionD').value = '';
+      document.getElementById('correct').value = 'A';
+      document.getElementById('explanation').value = '';
+    }
+
     async function saveQuestion() {
       const payload = {
         discipline: document.getElementById('discipline').value,
@@ -543,34 +600,41 @@
         return;
       }
 
-      const { error } = await supabaseClient.from('questions').insert(payload);
-
-      if (error) {
-        alert('Erro ao guardar a pergunta.');
-        return;
+      let result;
+      if (editingId) {
+        result = await supabaseClient.from('questions').update(payload).eq('id', editingId);
+      } else {
+        result = await supabaseClient.from('questions').insert(payload);
       }
 
-      document.getElementById('statement').value = '';
-      document.getElementById('optionA').value = '';
-      document.getElementById('optionB').value = '';
-      document.getElementById('optionC').value = '';
-      document.getElementById('optionD').value = '';
-      document.getElementById('correct').value = 'A';
-      document.getElementById('explanation').value = '';
+      if (result.error) {
+        alert(editingId ? 'Erro ao atualizar a pergunta.' : 'Erro ao guardar a pergunta.');
+        return;
+      }
 
       currentDiscipline = payload.discipline;
       document.getElementById('discipline').value = payload.discipline;
       updateActiveTab();
+      cancelEdit();
       await loadAllQuestions();
     }
 
-    function updateActiveTab() {
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.innerText.trim() === currentDiscipline) {
-          tab.classList.add('active');
-        }
-      });
+    async function deleteQuestion(id) {
+      const ok = confirm('Queres mesmo apagar esta pergunta?');
+      if (!ok) return;
+
+      const { error } = await supabaseClient.from('questions').delete().eq('id', id);
+
+      if (error) {
+        alert('Erro ao apagar a pergunta.');
+        return;
+      }
+
+      if (editingId === id) {
+        cancelEdit();
+      }
+
+      await loadAllQuestions();
     }
 
     async function loadAllQuestions() {
@@ -637,6 +701,10 @@
           </div>
           <h3>${q.statement}</h3>
           ${opts}
+          <div class="action-row">
+            <button class="secondary action-btn" onclick='fillFormForEdit(${JSON.stringify(q).replace(/'/g, "&apos;")})'>Editar</button>
+            <button class="secondary action-btn" onclick="deleteQuestion('${q.id}')">Apagar</button>
+          </div>
         `;
 
         box.appendChild(div);
