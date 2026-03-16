@@ -27,9 +27,7 @@
       --shadow: 0 10px 30px rgba(21, 50, 61, 0.08);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -331,31 +329,15 @@
     }
 
     @media (max-width: 1000px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .counters {
-        grid-template-columns: repeat(2, 1fr);
-      }
+      .grid { grid-template-columns: 1fr; }
+      .counters { grid-template-columns: repeat(2, 1fr); }
     }
 
     @media (max-width: 600px) {
-      .container {
-        padding: 18px 14px 28px;
-      }
-
-      .counters {
-        grid-template-columns: 1fr;
-      }
-
-      h1 {
-        font-size: 26px;
-      }
-
-      .header-left {
-        align-items: flex-start;
-      }
+      .container { padding: 18px 14px 28px; }
+      .counters { grid-template-columns: 1fr; }
+      h1 { font-size: 26px; }
+      .header-left { align-items: flex-start; }
     }
   </style>
 </head>
@@ -448,12 +430,16 @@
           <label>Opção D</label>
           <input id="optionD" placeholder="Opção D" />
 
+          <label>Opção E (opcional)</label>
+          <input id="optionE" placeholder="Opção E (opcional)" />
+
           <label>Resposta correta</label>
           <select id="correct">
             <option>A</option>
             <option>B</option>
             <option>C</option>
             <option>D</option>
+            <option>E</option>
           </select>
 
           <label>Justificação breve</label>
@@ -560,6 +546,7 @@
       document.getElementById('optionB').value = '';
       document.getElementById('optionC').value = '';
       document.getElementById('optionD').value = '';
+      document.getElementById('optionE').value = '';
       document.getElementById('correct').value = 'A';
       document.getElementById('explanation').value = '';
     }
@@ -576,6 +563,7 @@
       document.getElementById('optionB').value = q.option_b;
       document.getElementById('optionC').value = q.option_c;
       document.getElementById('optionD').value = q.option_d;
+      document.getElementById('optionE').value = q.option_e || '';
       document.getElementById('correct').value = q.correct;
       document.getElementById('explanation').value = q.explanation || '';
 
@@ -599,13 +587,19 @@
         option_b: document.getElementById('optionB').value.trim(),
         option_c: document.getElementById('optionC').value.trim(),
         option_d: document.getElementById('optionD').value.trim(),
+        option_e: document.getElementById('optionE').value.trim(),
         correct: document.getElementById('correct').value,
         explanation: document.getElementById('explanation').value.trim(),
         author: currentUser
       };
 
       if (!payload.statement || !payload.option_a || !payload.option_b || !payload.option_c || !payload.option_d) {
-        alert('Preenche o enunciado e as quatro opções.');
+        alert('Preenche o enunciado e as opções A, B, C e D.');
+        return;
+      }
+
+      if (payload.correct === 'E' && !payload.option_e) {
+        alert('Escolheste E como resposta correta, mas a opção E está vazia.');
         return;
       }
 
@@ -694,8 +688,15 @@
 
         let opts = '';
 
-        ['A', 'B', 'C', 'D'].forEach(letter => {
-          const value = q['option_' + letter.toLowerCase()];
+        const optionEntries = [
+          ['A', q.option_a],
+          ['B', q.option_b],
+          ['C', q.option_c],
+          ['D', q.option_d],
+          ['E', q.option_e]
+        ].filter(([, value]) => String(value || '').trim() !== '');
+
+        optionEntries.forEach(([letter, value]) => {
           const safeExp = escapeHtml(q.explanation || '');
           opts += `<div class="option" onclick="answer(this,'${letter}','${q.correct}','${safeExp}')"><strong>${letter})</strong> ${escapeHtml(value)}</div>`;
         });
@@ -807,9 +808,14 @@
           `A) ${q.option_a}`,
           `B) ${q.option_b}`,
           `C) ${q.option_c}`,
-          `D) ${q.option_d}`,
-          `Resposta correta: ${q.correct}`
+          `D) ${q.option_d}`
         ];
+
+        if (String(q.option_e || '').trim() !== '') {
+          parts.push(`E) ${q.option_e}`);
+        }
+
+        parts.push(`Resposta correta: ${q.correct}`);
 
         parts.forEach((line, lineIndex) => {
           const wrapped = doc.splitTextToSize(line, 170);
@@ -855,7 +861,6 @@
       }
 
       const wb = XLSX.utils.book_new();
-
       const disciplines = ['Endocrino', 'Gastro', 'Imunologia', 'Microbiologia'];
 
       disciplines.forEach(discipline => {
@@ -868,6 +873,7 @@
             'Opção B': q.option_b,
             'Opção C': q.option_c,
             'Opção D': q.option_d,
+            'Opção E': q.option_e || '',
             'Resposta correta': q.correct,
             Justificação: q.explanation || '',
             Autor: q.author || ''
@@ -880,6 +886,7 @@
           'Opção B': '',
           'Opção C': '',
           'Opção D': '',
+          'Opção E': '',
           'Resposta correta': '',
           Justificação: '',
           Autor: ''
