@@ -4,146 +4,413 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Banco de Perguntas F4</title>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f4f6fb;
-      color: #1f2937;
+    :root {
+      --bg: #f7fbfc;
+      --bg-soft: #edf6f7;
+      --card: #ffffff;
+      --text: #15323d;
+      --muted: #6e828a;
+      --border: #d8e8ea;
+      --primary: #2d6f7d;
+      --primary-dark: #245866;
+      --accent: #def0f3;
+      --success: #e7f8eb;
+      --success-border: #9fd3ac;
+      --danger: #fdeaea;
+      --danger-border: #efb0b0;
+      --shadow: 0 10px 30px rgba(21, 50, 61, 0.08);
     }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-    .card {
-      background: white;
-      border-radius: 14px;
-      padding: 18px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-      margin-bottom: 18px;
-    }
-    h1, h2, h3 {
-      margin-top: 0;
-    }
-    input, textarea, select, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 6px;
-      margin-bottom: 12px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
+
+    * {
       box-sizing: border-box;
     }
-    textarea { min-height: 90px; resize: vertical; }
-    button {
-      cursor: pointer;
-      background: #111827;
-      color: white;
-      border: none;
-    }
-    button.secondary {
-      background: #e5e7eb;
-      color: #111827;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 20px;
-    }
-    .tabs {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-    .tab {
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: #e5e7eb;
-      cursor: pointer;
-      border: none;
-      color: #111827;
-      width: auto;
+
+    body {
       margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
     }
-    .tab.active {
-      background: #111827;
-      color: white;
+
+    .container {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
     }
-    .question {
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 16px;
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+      letter-spacing: -0.02em;
+    }
+
+    h1 {
+      font-size: 30px;
+      margin-bottom: 6px;
+    }
+
+    h2 {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    h3 {
+      font-size: 18px;
+      line-height: 1.55;
       margin-bottom: 14px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    input, textarea, select, button {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      margin-top: 6px;
+      margin-bottom: 12px;
+      font-size: 14px;
       background: #fff;
+      color: var(--text);
     }
-    .option {
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      padding: 10px;
-      margin: 8px 0;
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #9bc6cf;
+      box-shadow: 0 0 0 4px rgba(45, 111, 125, 0.10);
+    }
+
+    textarea {
+      min-height: 105px;
+      resize: vertical;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
       cursor: pointer;
-      background: #fafafa;
+      font-weight: 600;
     }
-    .option.correct {
-      background: #dcfce7;
-      border-color: #22c55e;
+
+    button:hover {
+      background: var(--primary-dark);
     }
-    .option.wrong {
-      background: #fee2e2;
-      border-color: #ef4444;
+
+    button.secondary {
+      background: #f7fbfc;
+      color: var(--text);
+      border: 1px solid var(--border);
     }
-    .meta {
-      font-size: 12px;
-      color: #6b7280;
-      margin-bottom: 10px;
+
+    button.secondary:hover {
+      background: #edf6f7;
     }
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+
     .topbar {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
       align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
       flex-wrap: wrap;
     }
-    .hidden { display: none; }
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: 1fr; }
+
+    .logo {
+      height: 62px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    .logo-small {
+      height: 52px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    .user-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #f7fbfc;
+      border: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: #f2f8f9;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .tab.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .question {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfeff 100%);
+    }
+
+    .option {
+      border: 1px solid var(--border);
+      padding: 14px;
+      border-radius: 14px;
+      margin: 9px 0;
+      cursor: pointer;
+      line-height: 1.55;
+      background: white;
+      transition: 0.2s ease;
+    }
+
+    .option:hover {
+      background: #f8fbfc;
+    }
+
+    .correct {
+      background: var(--success);
+      border-color: var(--success-border);
+    }
+
+    .wrong {
+      background: var(--danger);
+      border-color: var(--danger-border);
+    }
+
+    .meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f7fbfc;
+      border: 1px solid var(--border);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .result-box {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fcfeff;
+      line-height: 1.6;
+    }
+
+    .counters {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .counter-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .counter-title {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .counter-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+
+    .section-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .count-badge {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--primary-dark);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .small-note {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1000px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .counters {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 18px 14px 28px;
+      }
+
+      .counters {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      .header-left {
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
+
     <div id="loginCard" class="card">
-      <h1>Banco de Perguntas F4</h1>
-      <p>Login partilhado para Endocrino, Gastro, Imunologia e Microbiologia.</p>
+      <div style="display:flex; justify-content:center; margin-bottom:16px;">
+        <img src="logo.png" alt="Escola de Medicina da Universidade do Minho" class="logo" />
+      </div>
+
+      <h1 style="text-align:center;">Banco de Perguntas F4</h1>
+      <div class="subtitle" style="text-align:center; margin-bottom:18px;">
+        Plataforma simples e moderna para Endocrino, Gastro, Imunologia e Microbiologia.
+      </div>
+
       <label>Login</label>
       <input id="loginUser" placeholder="Ex.: F4M" />
+
       <label>Password</label>
       <input id="loginPass" type="password" placeholder="Password" />
+
       <button onclick="login()">Entrar</button>
-      <div id="loginError" style="color:#dc2626;"></div>
+      <div id="loginError" style="color:#c53030;"></div>
     </div>
 
     <div id="app" class="hidden">
+
       <div class="topbar">
-        <h1>Banco de Perguntas F4</h1>
-        <div>
-          <span id="who"></span>
-          <button class="secondary" style="width:auto; margin-left:10px;" onclick="logout()">Sair</button>
+        <div class="header-left">
+          <img src="logo.png" alt="Escola de Medicina da Universidade do Minho" class="logo-small" />
+          <div>
+            <h1>Banco de Perguntas F4</h1>
+            <div class="subtitle">Treino clínico por módulos, com exportação em PDF por cadeira.</div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <div class="user-badge" id="userBadge"></div>
+          <button class="secondary" style="width:auto;" onclick="logout()">Sair</button>
+        </div>
+      </div>
+
+      <div class="counters">
+        <div class="counter-card">
+          <div class="counter-title">Total geral</div>
+          <div class="counter-value" id="countTotal">0</div>
+        </div>
+        <div class="counter-card">
+          <div class="counter-title">Endocrino</div>
+          <div class="counter-value" id="countEndocrino">0</div>
+        </div>
+        <div class="counter-card">
+          <div class="counter-title">Gastro</div>
+          <div class="counter-value" id="countGastro">0</div>
+        </div>
+        <div class="counter-card">
+          <div class="counter-title">Imunologia</div>
+          <div class="counter-value" id="countImunologia">0</div>
+        </div>
+        <div class="counter-card">
+          <div class="counter-title">Microbiologia</div>
+          <div class="counter-value" id="countMicrobiologia">0</div>
         </div>
       </div>
 
       <div class="grid">
+
         <div class="card">
-          <h2 id="formTitle">Nova pergunta</h2>
+          <h2>Nova pergunta</h2>
+          <div class="small-note">As perguntas são guardadas online e ficam visíveis para todo o grupo.</div>
 
           <label>Disciplina</label>
           <select id="discipline">
@@ -154,19 +421,19 @@
           </select>
 
           <label>Enunciado</label>
-          <textarea id="statement" placeholder="Escreve a pergunta clínica"></textarea>
+          <textarea id="statement" placeholder="Escreve a pergunta"></textarea>
 
           <label>Opção A</label>
-          <input id="optionA" />
+          <input id="optionA" placeholder="Opção A" />
 
           <label>Opção B</label>
-          <input id="optionB" />
+          <input id="optionB" placeholder="Opção B" />
 
           <label>Opção C</label>
-          <input id="optionC" />
+          <input id="optionC" placeholder="Opção C" />
 
           <label>Opção D</label>
-          <input id="optionD" />
+          <input id="optionD" placeholder="Opção D" />
 
           <label>Resposta correta</label>
           <select id="correct">
@@ -177,42 +444,45 @@
           </select>
 
           <label>Justificação breve</label>
-          <textarea id="explanation" placeholder="Opcional"></textarea>
+          <textarea id="explanation" placeholder="Opcional. Aparece depois de responder."></textarea>
 
-          <div class="row">
-            <button onclick="saveQuestion()">Guardar</button>
-            <button class="secondary" onclick="resetForm()">Limpar</button>
-          </div>
+          <button onclick="saveQuestion()">Guardar</button>
         </div>
 
         <div class="card">
-          <div class="topbar">
-            <h2>Perguntas</h2>
+          <div class="topbar" style="margin-bottom:8px;">
             <div>
-              <button id="listBtn" class="tab active" onclick="setMode('list')">Lista</button>
-              <button id="quizBtn" class="tab" onclick="setMode('quiz')">Quiz</button>
+              <h2>Perguntas</h2>
+              <div class="subtitle">As perguntas aparecem pela ordem em que o grupo as introduz.</div>
             </div>
           </div>
 
           <div class="tabs">
-            <button class="tab active" onclick="setDiscipline('Endocrino', this)">Endocrino</button>
-            <button class="tab" onclick="setDiscipline('Gastro', this)">Gastro</button>
-            <button class="tab" onclick="setDiscipline('Imunologia', this)">Imunologia</button>
-            <button class="tab" onclick="setDiscipline('Microbiologia', this)">Microbiologia</button>
+            <div class="tab active" onclick="setDiscipline('Endocrino',this)">Endocrino</div>
+            <div class="tab" onclick="setDiscipline('Gastro',this)">Gastro</div>
+            <div class="tab" onclick="setDiscipline('Imunologia',this)">Imunologia</div>
+            <div class="tab" onclick="setDiscipline('Microbiologia',this)">Microbiologia</div>
+          </div>
+
+          <div class="section-actions">
+            <div class="count-badge" id="questionCount">0 perguntas neste módulo</div>
+            <button class="secondary" style="width:auto;" onclick="generatePDF()">Gerar PDF desta cadeira</button>
           </div>
 
           <div id="questionsList"></div>
         </div>
+
       </div>
     </div>
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://nsvxaaebxikqoodpkvzs.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_R8zfRoIHCJxlsh4aQgxkbw_qOhg7JX7';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = supabase.createClient(
+      'https://nsvxaaebxikqoodpkvzs.supabase.co',
+      'sb_publishable_R8zfRoIHCJxlsh4aQgxkbw_qOhg7JX7'
+    );
 
-    const allowedUsers = {
+    const users = {
       F4M: 'fquatrom',
       F4J: 'fquatroj',
       F4I: 'fquatroi',
@@ -221,15 +491,15 @@
 
     let currentUser = localStorage.getItem('f4_user') || '';
     let currentDiscipline = 'Endocrino';
-    let mode = 'list';
-    let editingId = null;
+    let allQuestions = [];
 
     function login() {
-      const user = document.getElementById('loginUser').value.trim();
-      const pass = document.getElementById('loginPass').value;
-      if (allowedUsers[user] && allowedUsers[user] === pass) {
-        currentUser = user;
-        localStorage.setItem('f4_user', user);
+      const u = document.getElementById('loginUser').value.trim();
+      const p = document.getElementById('loginPass').value;
+
+      if (users[u] === p) {
+        currentUser = u;
+        localStorage.setItem('f4_user', u);
         startApp();
       } else {
         document.getElementById('loginError').innerText = 'Login inválido.';
@@ -244,35 +514,15 @@
     function startApp() {
       document.getElementById('loginCard').classList.add('hidden');
       document.getElementById('app').classList.remove('hidden');
-      document.getElementById('who').innerText = 'Utilizador: ' + currentUser;
-      loadQuestions();
+      document.getElementById('userBadge').innerText = 'Utilizador: ' + currentUser;
+      loadAllQuestions();
     }
 
-    function setMode(newMode) {
-      mode = newMode;
-      document.getElementById('listBtn').classList.toggle('active', mode === 'list');
-      document.getElementById('quizBtn').classList.toggle('active', mode === 'quiz');
-      loadQuestions();
-    }
-
-    function setDiscipline(discipline, btn) {
-      currentDiscipline = discipline;
-      document.querySelectorAll('.tabs .tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadQuestions();
-    }
-
-    function resetForm() {
-      editingId = null;
-      document.getElementById('formTitle').innerText = 'Nova pergunta';
-      document.getElementById('discipline').value = 'Endocrino';
-      document.getElementById('statement').value = '';
-      document.getElementById('optionA').value = '';
-      document.getElementById('optionB').value = '';
-      document.getElementById('optionC').value = '';
-      document.getElementById('optionD').value = '';
-      document.getElementById('correct').value = 'A';
-      document.getElementById('explanation').value = '';
+    function setDiscipline(d, el) {
+      currentDiscipline = d;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      renderQuestions();
     }
 
     async function saveQuestion() {
@@ -289,120 +539,227 @@
       };
 
       if (!payload.statement || !payload.option_a || !payload.option_b || !payload.option_c || !payload.option_d) {
-        alert('Preenche o enunciado e as 4 opções.');
+        alert('Preenche o enunciado e as quatro opções.');
         return;
       }
 
-      let result;
-      if (editingId) {
-        result = await supabaseClient.from('questions').update(payload).eq('id', editingId);
-      } else {
-        result = await supabaseClient.from('questions').insert(payload);
-      }
+      const { error } = await supabaseClient.from('questions').insert(payload);
 
-      if (result.error) {
-        alert('Erro ao guardar.');
-        return;
-      }
-
-      resetForm();
-      currentDiscipline = payload.discipline;
-      loadQuestions();
-    }
-
-    async function deleteQuestion(id) {
-      if (!confirm('Queres apagar esta pergunta?')) return;
-      const { error } = await supabaseClient.from('questions').delete().eq('id', id);
       if (error) {
-        alert('Erro ao apagar.');
+        alert('Erro ao guardar a pergunta.');
         return;
       }
-      loadQuestions();
+
+      document.getElementById('statement').value = '';
+      document.getElementById('optionA').value = '';
+      document.getElementById('optionB').value = '';
+      document.getElementById('optionC').value = '';
+      document.getElementById('optionD').value = '';
+      document.getElementById('correct').value = 'A';
+      document.getElementById('explanation').value = '';
+
+      currentDiscipline = payload.discipline;
+      document.getElementById('discipline').value = payload.discipline;
+      updateActiveTab();
+      await loadAllQuestions();
     }
 
-    function editQuestion(q) {
-      editingId = q.id;
-      document.getElementById('formTitle').innerText = 'Editar pergunta';
-      document.getElementById('discipline').value = q.discipline;
-      document.getElementById('statement').value = q.statement;
-      document.getElementById('optionA').value = q.option_a;
-      document.getElementById('optionB').value = q.option_b;
-      document.getElementById('optionC').value = q.option_c;
-      document.getElementById('optionD').value = q.option_d;
-      document.getElementById('correct').value = q.correct;
-      document.getElementById('explanation').value = q.explanation || '';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    function updateActiveTab() {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.innerText.trim() === currentDiscipline) {
+          tab.classList.add('active');
+        }
+      });
     }
 
-    async function loadQuestions() {
+    async function loadAllQuestions() {
       const { data, error } = await supabaseClient
         .from('questions')
         .select('*')
-        .eq('discipline', currentDiscipline)
         .order('created_at', { ascending: true });
 
+      if (error) {
+        document.getElementById('questionsList').innerHTML = '<div class="question">Erro ao carregar perguntas.</div>';
+        return;
+      }
+
+      allQuestions = data || [];
+      updateCounters();
+      renderQuestions();
+    }
+
+    function updateCounters() {
+      const total = allQuestions.length;
+      const endocrino = allQuestions.filter(q => q.discipline === 'Endocrino').length;
+      const gastro = allQuestions.filter(q => q.discipline === 'Gastro').length;
+      const imunologia = allQuestions.filter(q => q.discipline === 'Imunologia').length;
+      const microbiologia = allQuestions.filter(q => q.discipline === 'Microbiologia').length;
+
+      document.getElementById('countTotal').innerText = total;
+      document.getElementById('countEndocrino').innerText = endocrino;
+      document.getElementById('countGastro').innerText = gastro;
+      document.getElementById('countImunologia').innerText = imunologia;
+      document.getElementById('countMicrobiologia').innerText = microbiologia;
+    }
+
+    function renderQuestions() {
+      const data = allQuestions.filter(q => q.discipline === currentDiscipline);
       const box = document.getElementById('questionsList');
       box.innerHTML = '';
 
-      if (error) {
-        box.innerHTML = '<p>Erro ao carregar perguntas.</p>';
+      document.getElementById('questionCount').innerText = `${data.length} pergunta(s) neste módulo`;
+
+      if (data.length === 0) {
+        box.innerHTML = '<div class="question"><div class="subtitle">Ainda não há perguntas neste módulo.</div></div>';
         return;
       }
 
-      if (!data || data.length === 0) {
-        box.innerHTML = '<p>Ainda não há perguntas neste módulo.</p>';
-        return;
-      }
-
-      data.forEach((q, index) => {
+      data.forEach((q, i) => {
         const div = document.createElement('div');
         div.className = 'question';
 
-        let optionsHtml = '';
-        ['A','B','C','D'].forEach(letter => {
+        let opts = '';
+
+        ['A', 'B', 'C', 'D'].forEach(letter => {
           const value = q['option_' + letter.toLowerCase()];
-          optionsHtml += `<div class="option" onclick="answer(this, '${letter}', '${q.correct}', ${JSON.stringify(q.explanation || '').replace(/"/g, '&quot;')})"><strong>${letter})</strong> ${value}</div>`;
+          const safeExp = (q.explanation || '')
+            .replace(/'/g, '&#39;')
+            .replace(/"/g, '&quot;');
+          opts += `<div class="option" onclick="answer(this,'${letter}','${q.correct}','${safeExp}')"><strong>${letter})</strong> ${value}</div>`;
         });
 
         div.innerHTML = `
-          <div class="meta">Pergunta ${index + 1} · Autor: ${q.author}</div>
-          <h3>${q.statement}</h3>
-          ${optionsHtml}
-          <div style="margin-top:10px;">
-            <button class="secondary" style="width:auto;" onclick='editQuestion(${JSON.stringify(q).replace(/'/g, "&apos;")})'>Editar</button>
-            <button class="secondary" style="width:auto;" onclick="deleteQuestion('${q.id}')">Apagar</button>
+          <div class="meta">
+            <span class="chip">Pergunta ${i + 1}</span>
+            <span class="chip">${q.discipline}</span>
+            <span class="chip">Autor: ${q.author}</span>
           </div>
+          <h3>${q.statement}</h3>
+          ${opts}
         `;
+
         box.appendChild(div);
       });
     }
 
-    function answer(el, selected, correct, explanation) {
+    function answer(el, sel, corr, exp) {
       const parent = el.parentElement;
-      const options = parent.querySelectorAll('.option');
-      options.forEach(opt => opt.onclick = null);
+      const opts = parent.querySelectorAll('.option');
 
-      options.forEach(opt => {
-        const text = opt.innerText.trim();
-        const letter = text.charAt(0);
-        if (letter === correct) opt.classList.add('correct');
-        else if (letter === selected && selected !== correct) opt.classList.add('wrong');
+      opts.forEach(o => o.onclick = null);
+
+      opts.forEach(o => {
+        const l = o.innerText.trim()[0];
+        if (l === corr) o.classList.add('correct');
+        else if (l === sel) o.classList.add('wrong');
       });
 
-      const result = document.createElement('div');
-      result.style.marginTop = '12px';
-      result.innerHTML = selected === correct
-        ? '<strong>Certo.</strong>'
-        : '<strong>Errado.</strong> Resposta correta: ' + correct;
+      const r = document.createElement('div');
+      r.className = 'result-box';
+      r.innerHTML = sel === corr
+        ? '<strong style="color:#256b3f;">Certo.</strong>'
+        : '<strong style="color:#b42318;">Errado.</strong> Resposta correta: ' + corr;
 
-      if (explanation) {
-        result.innerHTML += '<br><br><strong>Justificação:</strong> ' + explanation;
+      if (exp) {
+        r.innerHTML += '<br><br><strong>Justificação:</strong> ' + exp;
       }
 
-      parent.appendChild(result);
+      parent.appendChild(r);
     }
 
-    if (currentUser) startApp();
+    function disciplineLabelForPDF(discipline) {
+      if (discipline === 'Endocrino') return 'Perguntas de Endocrinologia';
+      if (discipline === 'Gastro') return 'Perguntas de Gastroenterologia';
+      if (discipline === 'Imunologia') return 'Perguntas de Imunologia';
+      if (discipline === 'Microbiologia') return 'Perguntas de Microbiologia';
+      return 'Perguntas de ' + discipline;
+    }
+
+    function generatePDF() {
+      const questions = allQuestions.filter(q => q.discipline === currentDiscipline);
+
+      if (questions.length === 0) {
+        alert('Não há perguntas nesta cadeira para gerar PDF.');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      let y = 20;
+
+      doc.setFillColor(223, 241, 244);
+      doc.rect(12, 12, pageWidth - 24, 18, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(33, 88, 100);
+      doc.setFontSize(16);
+      doc.text('Banco de Perguntas F4', 18, 20);
+
+      doc.setFontSize(12);
+      doc.setTextColor(22, 50, 63);
+      doc.text(disciplineLabelForPDF(currentDiscipline), 18, 26);
+
+      y = 38;
+
+      questions.forEach((q, index) => {
+        const parts = [
+          `${index + 1}. ${q.statement}`,
+          `A) ${q.option_a}`,
+          `B) ${q.option_b}`,
+          `C) ${q.option_c}`,
+          `D) ${q.option_d}`,
+          `Resposta correta: ${q.correct}`
+        ];
+
+        parts.forEach((line, lineIndex) => {
+          const wrapped = doc.splitTextToSize(line, 170);
+          const neededHeight = wrapped.length * 6;
+
+          if (y + neededHeight > pageHeight - 18) {
+            doc.addPage();
+            y = 20;
+          }
+
+          if (lineIndex === 0) {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(22, 50, 63);
+          } else if (line.startsWith('Resposta correta')) {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(33, 88, 100);
+          } else {
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(35, 55, 65);
+          }
+
+          doc.setFontSize(11);
+          doc.text(wrapped, 18, y);
+          y += neededHeight + 1;
+        });
+
+        y += 4;
+
+        if (y < pageHeight - 18) {
+          doc.setDrawColor(217, 231, 234);
+          doc.line(18, y - 1, pageWidth - 18, y - 1);
+          y += 5;
+        }
+      });
+
+      doc.save(`Perguntas_${currentDiscipline}.pdf`);
+    }
+
+    if (currentUser) {
+      startApp();
+    }
   </script>
 </body>
 </html>
