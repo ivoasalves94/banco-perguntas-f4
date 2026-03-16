@@ -292,33 +292,6 @@
       color: var(--primary-dark);
     }
 
-    .author-stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .author-card {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 14px;
-      box-shadow: var(--shadow);
-    }
-
-    .author-name {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-
-    .author-value {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--primary-dark);
-    }
-
     .section-actions {
       display: flex;
       gap: 10px;
@@ -362,8 +335,7 @@
         grid-template-columns: 1fr;
       }
 
-      .counters,
-      .author-stats {
+      .counters {
         grid-template-columns: repeat(2, 1fr);
       }
     }
@@ -373,8 +345,7 @@
         padding: 18px 14px 28px;
       }
 
-      .counters,
-      .author-stats {
+      .counters {
         grid-template-columns: 1fr;
       }
 
@@ -445,25 +416,6 @@
         <div class="counter-card">
           <div class="counter-title">Microbiologia</div>
           <div class="counter-value" id="countMicrobiologia">0</div>
-        </div>
-      </div>
-
-      <div class="author-stats">
-        <div class="author-card">
-          <div class="author-name">Perguntas F4M</div>
-          <div class="author-value" id="countF4M">0</div>
-        </div>
-        <div class="author-card">
-          <div class="author-name">Perguntas F4J</div>
-          <div class="author-value" id="countF4J">0</div>
-        </div>
-        <div class="author-card">
-          <div class="author-name">Perguntas F4I</div>
-          <div class="author-value" id="countF4I">0</div>
-        </div>
-        <div class="author-card">
-          <div class="author-name">Perguntas F4B</div>
-          <div class="author-value" id="countF4B">0</div>
         </div>
       </div>
 
@@ -717,21 +669,11 @@
       const imunologia = allQuestions.filter(q => q.discipline === 'Imunologia').length;
       const microbiologia = allQuestions.filter(q => q.discipline === 'Microbiologia').length;
 
-      const f4m = allQuestions.filter(q => q.author === 'F4M').length;
-      const f4j = allQuestions.filter(q => q.author === 'F4J').length;
-      const f4i = allQuestions.filter(q => q.author === 'F4I').length;
-      const f4b = allQuestions.filter(q => q.author === 'F4B').length;
-
       document.getElementById('countTotal').innerText = total;
       document.getElementById('countEndocrino').innerText = endocrino;
       document.getElementById('countGastro').innerText = gastro;
       document.getElementById('countImunologia').innerText = imunologia;
       document.getElementById('countMicrobiologia').innerText = microbiologia;
-
-      document.getElementById('countF4M').innerText = f4m;
-      document.getElementById('countF4J').innerText = f4j;
-      document.getElementById('countF4I').innerText = f4i;
-      document.getElementById('countF4B').innerText = f4b;
     }
 
     function renderQuestions() {
