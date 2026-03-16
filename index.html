@@ -7,6 +7,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root {
@@ -252,7 +253,7 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
 
     .result-box {
@@ -287,6 +288,33 @@
 
     .counter-value {
       font-size: 24px;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+
+    .author-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .author-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .author-name {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .author-value {
+      font-size: 22px;
       font-weight: 700;
       color: var(--primary-dark);
     }
@@ -334,7 +362,8 @@
         grid-template-columns: 1fr;
       }
 
-      .counters {
+      .counters,
+      .author-stats {
         grid-template-columns: repeat(2, 1fr);
       }
     }
@@ -344,7 +373,8 @@
         padding: 18px 14px 28px;
       }
 
-      .counters {
+      .counters,
+      .author-stats {
         grid-template-columns: 1fr;
       }
 
@@ -385,7 +415,7 @@
           <img src="logo.png" alt="Escola de Medicina da Universidade do Minho" class="logo-small" />
           <div>
             <h1>Banco de Perguntas F4</h1>
-            <div class="subtitle">Treino clínico por módulos, com exportação em PDF por cadeira.</div>
+            <div class="subtitle">Treino clínico por módulos, com exportação em PDF e backup Excel.</div>
           </div>
         </div>
 
@@ -415,6 +445,25 @@
         <div class="counter-card">
           <div class="counter-title">Microbiologia</div>
           <div class="counter-value" id="countMicrobiologia">0</div>
+        </div>
+      </div>
+
+      <div class="author-stats">
+        <div class="author-card">
+          <div class="author-name">Perguntas F4M</div>
+          <div class="author-value" id="countF4M">0</div>
+        </div>
+        <div class="author-card">
+          <div class="author-name">Perguntas F4J</div>
+          <div class="author-value" id="countF4J">0</div>
+        </div>
+        <div class="author-card">
+          <div class="author-name">Perguntas F4I</div>
+          <div class="author-value" id="countF4I">0</div>
+        </div>
+        <div class="author-card">
+          <div class="author-name">Perguntas F4B</div>
+          <div class="author-value" id="countF4B">0</div>
         </div>
       </div>
 
@@ -460,6 +509,7 @@
 
           <button id="saveBtn" onclick="saveQuestion()">Guardar</button>
           <button id="cancelBtn" class="secondary hidden" onclick="cancelEdit()">Cancelar edição</button>
+          <button class="secondary" onclick="clearForm()">Limpar formulário</button>
         </div>
 
         <div class="card">
@@ -480,6 +530,7 @@
           <div class="section-actions">
             <div class="count-badge" id="questionCount">0 perguntas neste módulo</div>
             <button class="secondary" style="width:auto;" onclick="generatePDF()">Gerar PDF desta cadeira</button>
+            <button class="secondary" style="width:auto;" onclick="generateExcelBackup()">Backup Excel</button>
           </div>
 
           <div id="questionsList"></div>
@@ -548,6 +599,19 @@
       });
     }
 
+    function clearForm() {
+      if (!editingId) {
+        document.getElementById('discipline').value = currentDiscipline;
+      }
+      document.getElementById('statement').value = '';
+      document.getElementById('optionA').value = '';
+      document.getElementById('optionB').value = '';
+      document.getElementById('optionC').value = '';
+      document.getElementById('optionD').value = '';
+      document.getElementById('correct').value = 'A';
+      document.getElementById('explanation').value = '';
+    }
+
     function fillFormForEdit(q) {
       editingId = q.id;
       document.getElementById('formTitle').innerText = 'Editar pergunta';
@@ -571,15 +635,8 @@
       document.getElementById('formTitle').innerText = 'Nova pergunta';
       document.getElementById('saveBtn').innerText = 'Guardar';
       document.getElementById('cancelBtn').classList.add('hidden');
-
       document.getElementById('discipline').value = currentDiscipline;
-      document.getElementById('statement').value = '';
-      document.getElementById('optionA').value = '';
-      document.getElementById('optionB').value = '';
-      document.getElementById('optionC').value = '';
-      document.getElementById('optionD').value = '';
-      document.getElementById('correct').value = 'A';
-      document.getElementById('explanation').value = '';
+      clearForm();
     }
 
     async function saveQuestion() {
@@ -660,11 +717,21 @@
       const imunologia = allQuestions.filter(q => q.discipline === 'Imunologia').length;
       const microbiologia = allQuestions.filter(q => q.discipline === 'Microbiologia').length;
 
+      const f4m = allQuestions.filter(q => q.author === 'F4M').length;
+      const f4j = allQuestions.filter(q => q.author === 'F4J').length;
+      const f4i = allQuestions.filter(q => q.author === 'F4I').length;
+      const f4b = allQuestions.filter(q => q.author === 'F4B').length;
+
       document.getElementById('countTotal').innerText = total;
       document.getElementById('countEndocrino').innerText = endocrino;
       document.getElementById('countGastro').innerText = gastro;
       document.getElementById('countImunologia').innerText = imunologia;
       document.getElementById('countMicrobiologia').innerText = microbiologia;
+
+      document.getElementById('countF4M').innerText = f4m;
+      document.getElementById('countF4J').innerText = f4j;
+      document.getElementById('countF4I').innerText = f4i;
+      document.getElementById('countF4B').innerText = f4b;
     }
 
     function renderQuestions() {
@@ -687,28 +754,33 @@
 
         ['A', 'B', 'C', 'D'].forEach(letter => {
           const value = q['option_' + letter.toLowerCase()];
-          const safeExp = (q.explanation || '')
-            .replace(/'/g, '&#39;')
-            .replace(/"/g, '&quot;');
-          opts += `<div class="option" onclick="answer(this,'${letter}','${q.correct}','${safeExp}')"><strong>${letter})</strong> ${value}</div>`;
+          const safeExp = escapeHtml(q.explanation || '');
+          opts += `<div class="option" onclick="answer(this,'${letter}','${q.correct}','${safeExp}')"><strong>${letter})</strong> ${escapeHtml(value)}</div>`;
         });
+
+        const safeObj = encodeURIComponent(JSON.stringify(q));
 
         div.innerHTML = `
           <div class="meta">
             <span class="chip">Pergunta ${i + 1}</span>
-            <span class="chip">${q.discipline}</span>
-            <span class="chip">Autor: ${q.author}</span>
+            <span class="chip">${escapeHtml(q.discipline)}</span>
+            <span class="chip">Autor: ${escapeHtml(q.author)}</span>
           </div>
-          <h3>${q.statement}</h3>
+          <h3>${escapeHtml(q.statement)}</h3>
           ${opts}
           <div class="action-row">
-            <button class="secondary action-btn" onclick='fillFormForEdit(${JSON.stringify(q).replace(/'/g, "&apos;")})'>Editar</button>
+            <button class="secondary action-btn" onclick="editQuestionFromEncoded('${safeObj}')">Editar</button>
             <button class="secondary action-btn" onclick="deleteQuestion('${q.id}')">Apagar</button>
           </div>
         `;
 
         box.appendChild(div);
       });
+    }
+
+    function editQuestionFromEncoded(encoded) {
+      const q = JSON.parse(decodeURIComponent(encoded));
+      fillFormForEdit(q);
     }
 
     function answer(el, sel, corr, exp) {
@@ -734,6 +806,15 @@
       }
 
       parent.appendChild(r);
+    }
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function disciplineLabelForPDF(discipline) {
@@ -823,6 +904,64 @@
       });
 
       doc.save(`Perguntas_${currentDiscipline}.pdf`);
+    }
+
+    function generateExcelBackup() {
+      if (!allQuestions.length) {
+        alert('Não há perguntas para exportar.');
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      const disciplines = ['Endocrino', 'Gastro', 'Imunologia', 'Microbiologia'];
+
+      disciplines.forEach(discipline => {
+        const rows = allQuestions
+          .filter(q => q.discipline === discipline)
+          .map((q, index) => ({
+            Número: index + 1,
+            Pergunta: q.statement,
+            'Opção A': q.option_a,
+            'Opção B': q.option_b,
+            'Opção C': q.option_c,
+            'Opção D': q.option_d,
+            'Resposta correta': q.correct,
+            Justificação: q.explanation || '',
+            Autor: q.author || ''
+          }));
+
+        const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
+          Número: '',
+          Pergunta: '',
+          'Opção A': '',
+          'Opção B': '',
+          'Opção C': '',
+          'Opção D': '',
+          'Resposta correta': '',
+          Justificação: '',
+          Autor: ''
+        }]);
+
+        XLSX.utils.book_append_sheet(wb, ws, discipline);
+      });
+
+      const statsRows = [
+        { Tipo: 'Total geral', Valor: allQuestions.length },
+        { Tipo: 'Total Endocrino', Valor: allQuestions.filter(q => q.discipline === 'Endocrino').length },
+        { Tipo: 'Total Gastro', Valor: allQuestions.filter(q => q.discipline === 'Gastro').length },
+        { Tipo: 'Total Imunologia', Valor: allQuestions.filter(q => q.discipline === 'Imunologia').length },
+        { Tipo: 'Total Microbiologia', Valor: allQuestions.filter(q => q.discipline === 'Microbiologia').length },
+        { Tipo: 'Perguntas F4M', Valor: allQuestions.filter(q => q.author === 'F4M').length },
+        { Tipo: 'Perguntas F4J', Valor: allQuestions.filter(q => q.author === 'F4J').length },
+        { Tipo: 'Perguntas F4I', Valor: allQuestions.filter(q => q.author === 'F4I').length },
+        { Tipo: 'Perguntas F4B', Valor: allQuestions.filter(q => q.author === 'F4B').length }
+      ];
+
+      const wsStats = XLSX.utils.json_to_sheet(statsRows);
+      XLSX.utils.book_append_sheet(wb, wsStats, 'Estatísticas');
+
+      XLSX.writeFile(wb, 'Banco_Perguntas_F4_Backup.xlsx');
     }
 
     if (currentUser) {
